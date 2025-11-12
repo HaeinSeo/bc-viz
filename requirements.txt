@@ -1,0 +1,13 @@
+pandas>=2.1
+ucimlrepo>=0.0.6
+numpy>=1.26
+scikit-learn>=1.4
+matplotlib>=3.8
+seaborn>=0.13
+plotly>=5.20
+dash>=2.16
+shap>=0.45
+lime>=0.2
+eli5>=0.13
+dash-bootstrap-components>=1.6
+
