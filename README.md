@@ -1,40 +1,52 @@
-<!-- LOGO -->
+<h1 align="center" style="font-family: 'Comic Sans MS', 'Garamond', cursive; color:#993A6B;">
+💗 bc-viz 💗
+</h1>
+
 <p align="center">
-  <img src="./team_logo.png" alt="bc-viz logo" width="220">
+  <img src="./team_logo.png" width="180" alt="bc-viz Logo">
 </p>
 
-<h1 align="center">bc-viz</h1>
-
-<p align="center">
-  <em>Breast Cancer Wisconsin (Diagnostic) 데이터를 중심으로 분포·상관·패턴을 직관적으로 탐색하는 Python 기반 시각화 프로젝트</em>
+<p align="center" style="font-size:16px; line-height:1.6;">
+🧬 <b>bc-viz</b>는 <b>Breast Cancer Wisconsin (Diagnostic)</b> 데이터를 기반으로  
+유방암 진단과 관련된 <b>특징(feature) 분포, 상관관계, 패턴</b>을 시각적으로 탐색할 수 있도록 설계된  
+<b>Python 기반 데이터 시각화 프로젝트</b>입니다.  
+데이터의 구조적 관계를 직관적으로 보여주며,  
+분석 결과를 <b>대시보드</b> 및 <b>리포트</b> 형태로 탐색할 수 있습니다. 🌷
 </p>
 
 ---
 
-bc-viz는 데이터의 분포, 상관관계, 패턴을 직관적으로 표현하는 Python 기반 시각화 프로젝트로, 분석 결과를 대시보드와 리포트 형태로 탐색할 수 있습니다.  
-**bc-viz is a Python-based visualization project that intuitively displays data distributions, correlations, and patterns through interactive dashboards and reports.**
+### 🩺 About the Dataset
+
+The project utilizes the  
+<a href="https://archive.ics.uci.edu/dataset/17/breast+cancer+wisconsin+diagnostic">
+<b>UCI “Breast Cancer Wisconsin (Diagnostic)” dataset</b></a>,  
+collected by the <i>University of Wisconsin Diagnostic Center</i>.  
+It contains 569 samples with 30 continuous numerical features  
+used to classify tumors as **malignant (M)** or **benign (B)**.
 
 ---
 
-## 📦 Dataset at a Glance
+### 💡 Tech Stack
+🐍 `Python` · `Pandas` · `NumPy` · `Matplotlib` · `Seaborn` · `Plotly` · `Dash`
 
-> **Breast Cancer Wisconsin (Diagnostic)** (UCI Machine Learning Repository)  
-> Source: Wisconsin Diagnostic Center  
-> URL: https://archive.ics.uci.edu/dataset/17/breast+cancer+wisconsin+diagnostic
+---
+
+### 📊 Dataset Overview
 
 | 항목 | 내용 |
-|---|---|
-| 데이터 이름 | Breast Cancer Wisconsin (Diagnostic) |
-| 주제 분야 | 의학 — 유방암 진단 |
-| 문제 유형 | 이진 분류 (양성 / 악성) |
-| 표본 수 | 569 |
-| 특징 수 | 30 (모두 연속형 실수형) |
-| 타깃 라벨 | `diagnosis` (M = 악성, B = 양성) |
-| 데이터 출처 | 위스콘신 대학 병리학 연구소 (Wisconsin Diagnostic Center) |
+|:---|:---|
+| **데이터 이름** | Breast Cancer Wisconsin (Diagnostic) |
+| **주제 분야** | 의학 — 유방암 진단 |
+| **문제 유형** | 이진 분류 (양성 / 악성) |
+| **표본 수** | 569 |
+| **특징 수** | 30 (모두 연속형 실수형) |
+| **타깃 라벨** | `diagnosis` (M = 악성, B = 양성) |
+| **데이터 출처** | 위스콘신 대학 병리학 연구소 (Wisconsin Diagnostic Center) |
 
 ---
 
-## 📚 Feature Dictionary
+### 🔎 Feature Dictionary
 
 | 구분 | 변수명(name) | 의미(영문) | 설명(한글) | 측정 구분 |
 |---:|---|---|---|---|
@@ -73,11 +85,22 @@ bc-viz는 데이터의 분포, 상관관계, 패턴을 직관적으로 표현하
 
 ---
 
-## 🧭 Project Goals (요약)
-- 분포, 상관, 이상치 탐색을 위한 **EDA 대시보드** 제공
-- 모델링/리포팅에 바로 쓰는 **자동 리포트 아티팩트** 생성
+### 🎯 Vision
+<p align="center" style="font-size:15px; line-height:1.7;">
+bc-viz는 <b>의료 데이터 시각화</b>를 통해  
+AI 기반 진단 보조 시스템의 가능성을 제시하고,  
+데이터 과학의 <b>해석 가능성(Explainability)</b>을 높이는 것을 목표로 합니다. 🩷  
+</p>
 
-## 📝 Citation
+<p align="center">
+  <img src="https://img.shields.io/badge/Data%20Visualization-Matplotlib-blue?style=for-the-badge">
+  <img src="https://img.shields.io/badge/Medical%20Analytics-Breast%20Cancer-pink?style=for-the-badge">
+</p>
+
+---
+
+### 📚 Citation
 If you use this dataset, please cite the UCI ML Repository entry:  
-*Breast Cancer Wisconsin (Diagnostic) Data Set, UCI Machine Learning Repository.*
+**Breast Cancer Wisconsin (Diagnostic) Data Set, UCI Machine Learning Repository.**
+
 
