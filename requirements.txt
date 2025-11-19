@@ -8,4 +8,7 @@ scikit-learn>=1.2.0
 statsmodels>=0.14.0
 nbformat>=4.2.0
 ipython>=8.0.0
+streamlit>=1.28.0
+Pillow>=10.0.0
+umap-learn>=0.5.4
 
