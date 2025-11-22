@@ -1,0 +1,2782 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BC-Viz: 유방암 데이터 분석 대시보드</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Malgun Gothic', 'Nanum Gothic', sans-serif;
+            overflow-x: hidden;
+            transition: all 0.3s ease;
+        }
+
+        /* 라이트/다크 공통 변수 */
+        :root {
+            --bg-main: #e0eafc;
+            --bg-sidebar: linear-gradient(180deg, #48BBB4 0%, #2a9d8f 100%);
+            --bg-card: rgba(255, 255, 255, 0.9);
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent-color: #48BBB4;
+            --border-color: rgba(72, 187, 180, 0.2);
+            --shadow: 0 8px 32px rgba(102, 126, 234, 0.1);
+        }
+
+        body.dark-mode {
+            --bg-main: linear-gradient(135deg, #0a0e1a 0%, #0f172a 25%, #1a1f3a 50%, #1e293b 75%, #0f172a 100%);
+            --bg-sidebar: linear-gradient(180deg, #1a365d 0%, #2d4a7c 50%, #1e3a5f 100%);
+            --bg-card: rgba(30, 41, 59, 0.9);
+            --text-primary: #f9fafb;
+            --text-secondary: #e2e8f0;
+            --accent-color: #48BBB4;
+            --border-color: rgba(72, 187, 180, 0.4);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        
+        /* body 배경도 고급스러운 그라데이션 */
+        body.light-mode {
+            background: linear-gradient(
+                135deg,
+                #f8fafc 0%,
+                #f1f5f9 25%,
+                #e8f0f8 50%,
+                #f1f5f9 75%,
+                #f8fafc 100%
+            );
+            background-attachment: fixed;
+        }
+        
+        body.dark-mode {
+            background: linear-gradient(
+                135deg,
+                #0a0e1a 0%,
+                #0f172a 20%,
+                #1a1f3a 40%,
+                #1e2540 60%,
+                #1a2332 80%,
+                #0f172a 100%
+            );
+            background-attachment: fixed;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* 로고 영역 */
+        .logo-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100px;
+            background: var(--bg-sidebar);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.25rem;
+            z-index: 1000;
+            border-bottom: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        body.dark-mode .logo-container {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        .logo-container img {
+            max-width: 100%;
+            max-height: 70px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        .logo-container h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #ffffff;
+        }
+
+        /* 사이드바 */
+        .sidebar {
+            width: 250px;
+            background: var(--bg-sidebar);
+            padding-top: 100px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 999;
+            border-right: none;
+            box-shadow: 2px 0 12px rgba(0, 0, 0, 0.08);
+        }
+
+        body.dark-mode .sidebar {
+            box-shadow: 2px 0 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 1rem 0;
+        }
+
+        .sidebar-menu-item {
+            padding: 1rem 1.5rem;
+            color: rgba(255, 255, 255, 0.9);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 3px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.9375rem;
+            margin: 0.25rem 0.5rem;
+            border-radius: 8px;
+        }
+
+        .sidebar-menu-item span:first-child {
+            font-size: 1.125rem;
+        }
+
+        .sidebar-menu-item:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-left-color: rgba(255, 255, 255, 0.8);
+            color: #FFFFFF;
+            transform: translateX(4px);
+        }
+
+        .sidebar-menu-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-left-color: #FFFFFF;
+            font-weight: 600;
+            color: #FFFFFF;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 다크 모드 토글 */
+        .theme-toggle {
+            margin: 1rem;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 0.5rem;
+            color: #FFFFFF;
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* 악성 분석 체크박스 */
+        .malignant-checkbox {
+            margin: 1rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+        }
+
+        .malignant-checkbox label {
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .malignant-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        /* 메인 콘텐츠 */
+        .main-content {
+            margin-left: 250px;
+            padding: 1rem 1.5rem;
+            min-height: 100vh;
+            width: calc(100% - 250px);
+            max-width: none;
+            background: var(--bg-main);
+            overflow-y: auto;
+        }
+
+        /* 데스크탑 기준 화면 꽉 채우기 */
+        @media (min-width: 1024px) {
+            .main-content {
+                padding: 1.5rem 2rem;
+                width: calc(100% - 250px);
+            }
+        }
+
+        @media (min-width: 1400px) {
+            .main-content {
+                padding: 2rem 2.5rem;
+            }
+        }
+
+        .main-content.light-mode {
+            /* 고급스러운 라이트 모드 그라데이션 - 부드러운 파스텔 톤 */
+            background: linear-gradient(
+                135deg,
+                #f0f4f8 0%,
+                #e8f0f8 15%,
+                #e0eafc 30%,
+                #d6e4f0 45%,
+                #e8f0f8 60%,
+                #f0f7ff 75%,
+                #e8f2ff 90%,
+                #f0f4f8 100%
+            );
+            background-size: 400% 400%;
+            animation: gradientShift 30s ease infinite;
+        }
+
+        body.dark-mode .main-content {
+            /* 고급스러운 다크 모드 그라데이션 - 깊고 우아한 톤 */
+            background: linear-gradient(
+                135deg,
+                #0a0e1a 0%,
+                #0f172a 12%,
+                #1a1f3a 25%,
+                #1e2540 37%,
+                #1a2332 50%,
+                #1e293b 62%,
+                #1a2f4a 75%,
+                #152437 87%,
+                #0f172a 100%
+            );
+            background-size: 400% 400%;
+            animation: gradientShift 35s ease infinite;
+        }
+        
+        /* 추가 고급 그라데이션 효과 (라디얼 그라데이션 오버레이) */
+        .main-content.light-mode::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(
+                ellipse 80% 50% at top right,
+                rgba(72, 187, 180, 0.06) 0%,
+                transparent 50%
+            ),
+            radial-gradient(
+                ellipse 80% 50% at bottom left,
+                rgba(102, 126, 234, 0.05) 0%,
+                transparent 50%
+            );
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body.dark-mode .main-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(
+                ellipse 70% 40% at top right,
+                rgba(72, 187, 180, 0.1) 0%,
+                transparent 60%
+            ),
+            radial-gradient(
+                ellipse 70% 40% at bottom left,
+                rgba(42, 157, 143, 0.08) 0%,
+                transparent 60%
+            ),
+            radial-gradient(
+                circle 50% at center,
+                rgba(30, 41, 59, 0.2) 0%,
+                transparent 70%
+            );
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* 메인 콘텐츠 position 설정 */
+        .main-content {
+            position: relative;
+        }
+
+        /* 콘텐츠가 배경 위에 표시되도록 */
+        .main-content > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 페이지 헤더 */
+        .page-header {
+            margin-bottom: 0.75rem;
+            padding: 0.25rem 0;
+        }
+
+        .page-header h1 {
+            font-size: 2.75rem;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #48BBB4 0%, #2a9d8f 50%, #667eea 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        body.dark-mode .page-header h1 {
+            background: linear-gradient(135deg, #48BBB4 0%, #2a9d8f 50%, #c4f1ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .page-header p {
+            font-size: 1.125rem;
+            color: #64748b;
+            font-weight: 400;
+            line-height: 1.6;
+        }
+
+        body.dark-mode .page-header p {
+            color: #cbd5e1;
+        }
+
+        /* 개요 페이지 vs 나머지 페이지 헤더 크기 차이 */
+        .page-content:not(#page-overview) .page-header {
+            margin-bottom: 0.5rem;
+        }
+
+        .page-content:not(#page-overview) .page-header h1 {
+            font-size: 1.75rem;
+            margin-bottom: 0.125rem;
+        }
+
+        .page-content:not(#page-overview) .page-header p {
+            font-size: 0.9rem;
+        }
+
+        /* 그리드 레이아웃 */
+        .widget-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            width: 100%;
+        }
+
+        /* 데스크탑에서 그리드 간격 확대 */
+        @media (min-width: 1400px) {
+            .widget-grid {
+                gap: 2rem;
+            }
+        }
+
+        /* 데이터 개요용 */
+        .widget-grid.overview-charts {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-container.overview-chart-item {
+            min-height: 500px;
+            max-height: 600px;
+            aspect-ratio: 16 / 10;
+        }
+
+        #page-overview {
+            height: auto;
+            min-height: auto;
+        }
+
+        #page-overview .widget-grid.overview-charts {
+            flex: none;
+            min-height: auto;
+        }
+
+        #page-overview .chart-container {
+            height: auto;
+            min-height: 500px;
+            max-height: 600px;
+            aspect-ratio: 16 / 10;
+        }
+
+        @media (min-width: 1600px) {
+            .widget-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 2rem;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .widget-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 나머지 페이지 */
+        .page-content:not(#page-overview) {
+            min-height: calc(100vh - 1.5rem);
+            padding: 0;
+        }
+
+        .page-content:not(#page-overview) .page-header {
+            flex-shrink: 0;
+            margin-bottom: 0.75rem;
+            padding: 0;
+        }
+
+        .page-content:not(#page-overview) .widget-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 1rem;
+            padding: 0;
+        }
+
+        .page-content:not(#page-overview) .chart-container {
+            width: 100%;
+            max-width: 100%;
+            background: #FFFFFF;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 500px;
+            aspect-ratio: 4 / 3;
+        }
+
+        body.dark-mode .page-content:not(#page-overview) .chart-container {
+            background: rgba(30, 41, 59, 0.95);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .page-content:not(#page-overview) .chart-container h3 {
+            margin-bottom: 0.75rem;
+            font-size: 1.125rem;
+            flex-shrink: 0;
+        }
+
+        .page-content:not(#page-overview) .chart-container > div:not(:first-child):not([class*="spinner"]) {
+            flex: 1;
+            min-height: 0;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .page-content:not(#page-overview) .chart-container.full-width-chart {
+            grid-column: 1 / -1;
+            aspect-ratio: 16 / 7;
+            min-height: 550px;
+        }
+
+        /* 상관관계 히트맵 전용 스타일 */
+        #page-correlation .chart-container.full-width-chart {
+            aspect-ratio: 1 / 1;
+            min-height: 700px;
+            max-height: none;
+        }
+
+        #page-correlation #correlation-chart {
+            width: 100% !important;
+            min-height: 700px !important;
+            height: auto !important;
+        }
+
+        #page-correlation .js-plotly-plot {
+            width: 100% !important;
+            min-height: 700px !important;
+            height: auto !important;
+        }
+
+        @media (max-width: 1200px) {
+            .page-content:not(#page-overview) .widget-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .page-content:not(#page-overview) .chart-container.full-width-chart {
+                grid-column: 1;
+                aspect-ratio: 16 / 10;
+            }
+        }
+
+        /* 메트릭 그리드 (나머지 페이지) */
+        .page-content:not(#page-overview) .metric-grid {
+            margin-bottom: 0.5rem;
+            gap: 0.75rem;
+        }
+
+        /* 버튼/입력 크기 조정 */
+        .page-content:not(#page-overview) .btn {
+            margin: 0.25rem 0.25rem 0.25rem 0;
+            padding: 0.625rem 1.25rem;
+            font-size: 0.875rem;
+        }
+
+        .page-content:not(#page-overview) select,
+        .page-content:not(#page-overview) input[type="number"] {
+            margin: 0.25rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        /* 위젯 카드 */
+        .widget-card {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 1.75rem;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        body.dark-mode .widget-card {
+            background: rgba(30, 41, 59, 0.95);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .widget-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #48BBB4 0%, #2a9d8f 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .widget-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(72, 187, 180, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark-mode .widget-card:hover {
+            box-shadow: 0 8px 24px rgba(72, 187, 180, 0.25), 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .widget-card:hover::before {
+            opacity: 1;
+        }
+
+        .widget-card h3 {
+            color: #1e293b;
+            margin-bottom: 1.25rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        body.dark-mode .widget-card h3 {
+            color: #FFFFFF;
+        }
+
+        /* 메트릭 카드 */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: #FFFFFF;
+            border-radius: 14px;
+            padding: 1.75rem 1.5rem;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        body.dark-mode .metric-card {
+            background: rgba(30, 41, 59, 0.95);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #48BBB4 0%, #2a9d8f 100%);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(72, 187, 180, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        body.dark-mode .metric-card:hover {
+            box-shadow: 0 6px 20px rgba(72, 187, 180, 0.2), 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .metric-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .metric-card label {
+            color: #64748b;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: block;
+            margin-bottom: 0.75rem;
+        }
+
+        body.dark-mode .metric-card label {
+            color: #94a3b8;
+        }
+
+        .metric-card .value {
+            color: #1e293b;
+            font-size: 2.25rem;
+            font-weight: 800;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+        }
+
+        body.dark-mode .metric-card .value {
+            color: #FFFFFF;
+        }
+
+        /* 차트 컨테이너 */
+        .chart-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 1rem;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        body.dark-mode .chart-container {
+            background: rgba(30, 41, 59, 0.95);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 데이터 개요 페이지의 차트 컨테이너 */
+        #page-overview .chart-container {
+            min-height: 500px;
+            max-height: 600px;
+        }
+
+        #page-overview .chart-container.overview-chart-item {
+            aspect-ratio: 4 / 3;
+        }
+
+        .chart-container:hover {
+            box-shadow: 0 4px 16px rgba(72, 187, 180, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .chart-container h3 {
+            color: #1e293b;
+            margin-bottom: 1.5rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        body.dark-mode .chart-container h3 {
+            color: #FFFFFF;
+        }
+
+        /* 데이터 테이블 */
+        .data-table {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 2rem;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+            overflow-x: auto;
+        }
+
+        body.dark-mode .data-table {
+            background: rgba(30, 41, 59, 0.95);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .data-table h3 {
+            color: #1e293b;
+            margin-bottom: 1.5rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        body.dark-mode .data-table h3 {
+            color: #FFFFFF;
+        }
+
+        .data-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 1rem 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            color: #475569;
+            font-size: 0.9375rem;
+        }
+
+        body.dark-mode .data-table th,
+        body.dark-mode .data-table td {
+            border-bottom: 1px solid rgba(72, 187, 180, 0.2);
+        }
+
+        .data-table th {
+            background: transparent;
+            font-weight: 700;
+            color: #48BBB4;
+            text-transform: uppercase;
+            font-size: 0.8125rem;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table tbody tr:hover {
+            background: rgba(72, 187, 180, 0.05);
+        }
+
+        body.dark-mode .data-table tbody tr:hover {
+            background: rgba(72, 187, 180, 0.1);
+        }
+
+        /* 버튼 */
+        .btn {
+            padding: 0.875rem 1.75rem;
+            background: linear-gradient(135deg, #48BBB4 0%, #2a9d8f 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin: 0.5rem 0.5rem 0.5rem 0;
+            box-shadow: 0 2px 8px rgba(72, 187, 180, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #2a9d8f 0%, #48BBB4 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(72, 187, 180, 0.35);
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(72, 187, 180, 0.25);
+        }
+
+        /* 로딩 스피너 */
+        .spinner {
+            border: 4px solid rgba(72, 187, 180, 0.3);
+            border-top: 4px solid #48BBB4;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* 입력 필드 */
+        select, input[type="number"] {
+            padding: 0.625rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: #FFFFFF;
+            color: #1e293b;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin: 0.5rem;
+            cursor: pointer;
+        }
+
+        body.dark-mode select,
+        body.dark-mode input[type="number"] {
+            border: 2px solid rgba(72, 187, 180, 0.3);
+            background: rgba(30, 41, 59, 0.8);
+            color: #FFFFFF;
+        }
+
+        select:hover, input[type="number"]:hover {
+            border-color: #48BBB4;
+            box-shadow: 0 0 0 3px rgba(72, 187, 180, 0.1);
+        }
+
+        select:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #48BBB4;
+            box-shadow: 0 0 0 3px rgba(72, 187, 180, 0.15);
+        }
+
+        label {
+            color: #475569;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+
+        body.dark-mode label {
+            color: #cbd5e1;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #48BBB4;
+        }
+
+        /* Plotly 차트 크기 통일 */
+        .chart-container > div[id$="-chart"],
+        .chart-container > div[id$="-plot"] {
+            width: 100% !important;
+            height: 100% !important;
+            flex: 1 1 auto !important;
+            min-height: 0 !important;
+            background: transparent;
+            position: relative;
+        }
+
+        .js-plotly-plot,
+        .plotly {
+            width: 100% !important;
+            height: 100% !important;
+            min-height: 450px !important;
+        }
+
+        /* 개요 페이지 차트 */
+        #page-overview .js-plotly-plot {
+            min-height: 450px !important;
+            height: 100% !important;
+            font-size: 16px !important;
+        }
+
+        #page-overview .js-plotly-plot .xtick,
+        #page-overview .js-plotly-plot .ytick {
+            font-size: 14px !important;
+        }
+
+        #page-overview .js-plotly-plot .gtitle {
+            font-size: 20px !important;
+        }
+
+        /* 나머지 페이지 차트 */
+        .page-content:not(#page-overview) .js-plotly-plot {
+            min-height: 450px !important;
+            height: 100% !important;
+            font-size: 14px !important;
+        }
+
+        .page-content:not(#page-overview) .chart-container.full-width-chart .js-plotly-plot {
+            min-height: 500px !important;
+            height: 100% !important;
+        }
+
+        /* 페이드 인 */
+        .page-content {
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 메인 스크롤바 */
+        .main-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .main-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .main-content::-webkit-scrollbar-thumb {
+            background: rgba(72, 187, 180, 0.3);
+            border-radius: 4px;
+        }
+
+        .main-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(72, 187, 180, 0.5);
+        }
+
+        /* 반응형 */
+        @media (max-width: 1400px) {
+            .widget-grid {
+                gap: 1rem;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .widget-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .widget-grid.overview-charts {
+                grid-template-columns: 1fr;
+            }
+
+            .page-content:not(#page-overview) .widget-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-container,
+            .page-content:not(#page-overview) .chart-container {
+                aspect-ratio: 4 / 3;
+                min-height: 450px;
+            }
+
+            .chart-container.full-width-chart {
+                aspect-ratio: 16 / 9;
+                min-height: 500px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+            .main-content {
+                margin-left: 200px;
+                padding: 1rem;
+            }
+            .logo-container {
+                width: 200px;
+            }
+            .widget-grid {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            .metric-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+
+            .chart-container {
+                padding: 0.75rem;
+                min-height: 400px;
+            }
+
+            .js-plotly-plot {
+                min-height: 400px !important;
+                height: 400px !important;
+            }
+        }
+
+        /* ===== 다크 모드 텍스트 색 강화 ===== */
+        body.dark-mode {
+            color: #f1f5f9;
+        }
+
+        body.dark-mode p,
+        body.dark-mode span,
+        body.dark-mode li,
+        body.dark-mode div {
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-mode td,
+        body.dark-mode th {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode h1,
+        body.dark-mode h2,
+        body.dark-mode h3,
+        body.dark-mode h4,
+        body.dark-mode h5,
+        body.dark-mode h6 {
+            color: #ffffff !important;
+        }
+
+        body.dark-mode .sidebar-menu-item {
+            color: rgba(255, 255, 255, 0.95) !important;
+        }
+
+        body.dark-mode table th {
+            color: #48BBB4 !important;
+        }
+
+        body.dark-mode table td {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode label {
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-mode .metric-card label {
+            color: #cbd5e1 !important;
+        }
+
+        body.dark-mode .page-header p {
+            color: #e2e8f0 !important;
+        }
+
+        /* 다크 모드 입력 필드 및 버튼 텍스트 */
+        body.dark-mode input,
+        body.dark-mode select,
+        body.dark-mode textarea {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .btn {
+            color: #ffffff !important;
+        }
+
+        body.dark-mode input::placeholder {
+            color: #94a3b8 !important;
+        }
+
+        /* 다크 모드 모든 텍스트 요소 추가 보장 */
+        body.dark-mode * {
+            color: inherit;
+        }
+
+        body.dark-mode .chart-container h3,
+        body.dark-mode .widget-card h3,
+        body.dark-mode .data-table h3 {
+            color: #ffffff !important;
+        }
+
+        /* Footer */
+        .footer {
+            position: relative;
+            width: calc(100% - 250px);
+            margin-left: 250px;
+            padding: 2rem 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(240, 245, 255, 0.9) 100%);
+            border-top: 2px solid rgba(72, 187, 180, 0.3);
+            color: #475569;
+            font-size: 0.9375rem;
+            margin-top: 3rem;
+            clear: both;
+            box-shadow: 0 -4px 20px rgba(72, 187, 180, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #48BBB4 0%, #2a9d8f 50%, #667eea 100%);
+            opacity: 0.8;
+        }
+
+        body.dark-mode .footer {
+            background: linear-gradient(135deg, rgba(26, 35, 50, 0.95) 0%, rgba(30, 41, 59, 0.95) 50%, rgba(26, 54, 93, 0.95) 100%);
+            border-top: 2px solid rgba(72, 187, 180, 0.5);
+            color: #e2e8f0 !important;
+            box-shadow: 0 -4px 20px rgba(72, 187, 180, 0.2);
+        }
+
+        body.dark-mode .footer::before {
+            background: linear-gradient(90deg, #48BBB4 0%, #2a9d8f 30%, #48BBB4 60%, #667eea 100%);
+            opacity: 0.9;
+        }
+
+        .footer p {
+            margin: 0;
+            padding: 0;
+            color: inherit;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .footer p::before {
+            content: '📊';
+            font-size: 1.2rem;
+        }
+
+        body.dark-mode .footer p {
+            color: #e2e8f0 !important;
+        }
+
+        .footer p span {
+            color: #48BBB4;
+            font-weight: 700;
+        }
+
+        body.dark-mode .footer p span {
+            color: #48BBB4 !important;
+        }
+
+        /* 메인 콘텐츠에 footer 공간 확보 */
+        .page-content:last-child {
+            padding-bottom: 1rem;
+            margin-bottom: 0;
+        }
+
+        /* 데스크탑에서 footer 패딩 조정 */
+        @media (min-width: 1024px) {
+            .footer {
+                padding: 1.5rem 2rem;
+            }
+        }
+    </style>
+</head>
+<body class="light-mode">
+    <div class="container">
+        <!-- 로고 -->
+        <div class="logo-container">
+            {% if logo_base64 %}
+            <img src="data:image/png;base64,{{ logo_base64 }}" alt="BC-Viz Logo">
+            {% else %}
+            <h2>BC-Viz</h2>
+            {% endif %}
+        </div>
+
+        <!-- 사이드바 -->
+        <div class="sidebar">
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <span id="theme-icon">🌙</span>
+            </button>
+
+            <div class="malignant-checkbox">
+                <label>
+                    <input type="checkbox" id="malignant-checkbox" onchange="toggleMalignantAnalysis()">
+                    <span>🔬 악성 유방암 데이터 집중적으로 살펴보기</span>
+                </label>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li class="sidebar-menu-item active" onclick="showPage('overview')">
+                    <span>🏠</span> <span>데이터 개요</span>
+                </li>
+                <li class="sidebar-menu-item" onclick="showPage('visualization')">
+                    <span>📈</span> <span>데이터 시각화</span>
+                </li>
+                <li class="sidebar-menu-item" onclick="showPage('ml-models')">
+                    <span>🤖</span> <span>머신러닝 모델</span>
+                </li>
+                <li class="sidebar-menu-item" onclick="showPage('xai-analysis')">
+                    <span>🔍</span> <span>XAI 분석</span>
+                </li>
+                <li class="sidebar-menu-item" onclick="showPage('dimension-reduction')">
+                    <span>🗺️</span> <span>차원 축소</span>
+                </li>
+                <li class="sidebar-menu-item" onclick="showPage('correlation')">
+                    <span>📊</span> <span>상관관계 분석</span>
+                </li>
+                <li class="sidebar-menu-item hidden" id="malignant-menu-item" onclick="showPage('malignant-analysis')">
+                    <span>⚡</span> <span>악성 심각도 분석</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 메인 -->
+        <div class="main-content light-mode">
+            <!-- 데이터 개요 -->
+            <div id="page-overview" class="page-content">
+                <div class="page-header">
+                    <h1>🏠 데이터 개요</h1>
+                    <p>유방암 데이터셋의 기본 통계 및 정보</p>
+                </div>
+
+                <div class="metric-grid" id="overview-metrics">
+                    <div class="spinner"></div>
+                </div>
+
+                <div class="widget-grid overview-charts">
+                    <div class="chart-container overview-chart-item">
+                        <h3>진단 분포 (파이 차트)</h3>
+                        <div id="diagnosis-pie-chart"></div>
+                    </div>
+                    <div class="chart-container overview-chart-item">
+                        <h3>진단별 샘플 수</h3>
+                        <div id="diagnosis-bar-chart"></div>
+                    </div>
+                </div>
+
+                <div class="data-table">
+                    <h3>📋 데이터 미리보기</h3>
+                    <div id="data-preview">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 데이터 시각화 -->
+            <div id="page-visualization" class="page-content hidden">
+                <div class="page-header">
+                    <h1>📈 데이터 시각화</h1>
+                    <p>다양한 시각화 방법으로 데이터 탐색</p>
+                </div>
+
+                <div class="widget-grid">
+                    <div class="chart-container">
+                        <h3>📦 Boxplot - 특징별 분포</h3>
+                        <div id="feature-selector">
+                            <p>특징 선택 중...</p>
+                        </div>
+                        <div id="boxplot-chart"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <h3>📊 히스토그램 - 진단별 특징 분포 비교</h3>
+                        <div id="histogram-feature-selector"></div>
+                        <div id="histogram-chart"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 머신러닝 모델 -->
+            <div id="page-ml-models" class="page-content hidden">
+                <div class="page-header">
+                    <h1>🤖 머신러닝 모델</h1>
+                    <p>Random Forest 및 Decision Tree 모델 성능 분석</p>
+                </div>
+
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <label>Random Forest 정확도</label>
+                        <div class="value" id="rf-accuracy">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <label>Decision Tree 정확도</label>
+                        <div class="value" id="dt-accuracy">-</div>
+                    </div>
+                </div>
+
+                <div class="widget-grid">
+                    <div class="chart-container">
+                        <h3>Random Forest Confusion Matrix</h3>
+                        <div id="rf-cm-chart"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <h3>Decision Tree Confusion Matrix</h3>
+                        <div id="dt-cm-chart"></div>
+                    </div>
+
+                    <div class="chart-container full-width-chart">
+                        <h3>Feature Importance (Random Forest)</h3>
+                        <div id="feature-importance-chart"></div>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="trainModels()">모델 학습</button>
+            </div>
+
+            <!-- XAI 분석 -->
+            <div id="page-xai-analysis" class="page-content hidden">
+                <div class="page-header">
+                    <h1>🔍 XAI 분석</h1>
+                    <p>설명 가능한 AI 기법을 통한 모델 해석</p>
+                </div>
+
+                <div id="xai-notice" class="widget-card" style="margin-bottom: 2rem; padding: 2rem; text-align: center;">
+                    <p id="xai-notice-text" style="font-size: 1.125rem; margin-bottom: 1rem;">
+                        XAI 분석 기능은 모델 학습 후 사용할 수 있습니다.
+                    </p>
+                    <button id="xai-run-btn" class="btn hidden" onclick="runXAI()" style="display: none;">
+                        XAI 분석 실행
+                    </button>
+                </div>
+
+                <div class="widget-grid">
+                    <div class="chart-container">
+                        <h3>SHAP 값 분석</h3>
+                        <div id="xai-shap-chart"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <h3>LIME 설명</h3>
+                        <div id="xai-lime-chart"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 차원 축소 -->
+            <div id="page-dimension-reduction" class="page-content hidden">
+                <div class="page-header">
+                    <h1>🗺️ 차원 축소</h1>
+                    <p>PCA 및 t-SNE를 통한 고차원 데이터 시각화</p>
+                </div>
+
+                <div class="widget-grid">
+                    <div class="chart-container">
+                        <h3>PCA 차원 축소</h3>
+                        <label>주성분 개수: </label>
+                        <select id="pca-components" onchange="updatePCA()">
+                            <option value="2">2D</option>
+                            <option value="3">3D</option>
+                        </select>
+                        <button class="btn" onclick="updatePCA()">PCA 실행</button>
+                        <div id="pca-chart"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <h3>t-SNE 차원 축소</h3>
+                        <label>차원: </label>
+                        <select id="tsne-components">
+                            <option value="2">2D</option>
+                            <option value="3">3D</option>
+                        </select>
+                        <label>Perplexity: </label>
+                        <input type="number" id="tsne-perplexity" value="30" min="5" max="50">
+                        <button class="btn" onclick="updateTSNE()">t-SNE 실행</button>
+                        <div id="tsne-chart"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 상관관계 분석 -->
+            <div id="page-correlation" class="page-content hidden">
+                <div class="page-header">
+                    <h1>📊 상관관계 분석</h1>
+                    <p>특징 간 상관관계 히트맵</p>
+                </div>
+
+                <div class="widget-grid">
+                    <div class="chart-container full-width-chart">
+                        <h3>상관관계 히트맵</h3>
+                        <button class="btn" onclick="loadCorrelationMatrix()">상관관계 행렬 로드</button>
+                        <div id="correlation-chart"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 악성 심각도 분석 -->
+            <div id="page-malignant-analysis" class="page-content hidden">
+                <div class="page-header">
+                    <h1>⚡ 악성 심각도 분석</h1>
+                    <p>악성 데이터만을 대상으로 한 심각도 분석</p>
+                </div>
+
+                <div class="widget-grid">
+                    <div class="chart-container full-width-chart">
+                        <p><strong>분석 목표:</strong> 악성 데이터만을 대상으로 하여, 악성 내에서 어떤 특징이 악성의 심각도에 가장 큰 영향을 주는지 분석</p>
+                        <button class="btn" onclick="analyzeMalignant()">악성 심각도 분석 실행</button>
+                        <div id="malignant-results"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>데이터 시각화 과목 <span>maker: seohaein</span></p>
+    </footer>
+
+<script>
+    let currentPage = 'overview';
+    let darkMode = false;
+    let showMalignantAnalysis = false;
+    let modelsTrained = false;
+
+    // Plotly 레이아웃에 다크 모드 설정 적용
+    function applyDarkModeToPlotlyLayout(layout) {
+        if (!darkMode) return layout;
+        
+        const darkConfig = {
+            font: { 
+                color: '#e2e8f0',
+                family: 'Malgun Gothic, sans-serif'
+            },
+            titlefont: { 
+                color: '#ffffff'
+            },
+            xaxis: {
+                titlefont: { color: '#e2e8f0' },
+                tickfont: { color: '#cbd5e1' },
+                gridcolor: 'rgba(72, 187, 180, 0.2)',
+                zerolinecolor: 'rgba(72, 187, 180, 0.3)',
+                linecolor: 'rgba(72, 187, 180, 0.3)'
+            },
+            yaxis: {
+                titlefont: { color: '#e2e8f0' },
+                tickfont: { color: '#cbd5e1' },
+                gridcolor: 'rgba(72, 187, 180, 0.2)',
+                zerolinecolor: 'rgba(72, 187, 180, 0.3)',
+                linecolor: 'rgba(72, 187, 180, 0.3)'
+            },
+            legend: {
+                font: { color: '#e2e8f0' },
+                bgcolor: 'rgba(30, 41, 59, 0.8)',
+                bordercolor: 'rgba(72, 187, 180, 0.3)'
+            }
+        };
+
+        // 기존 레이아웃과 병합
+        const mergedLayout = { ...layout };
+        if (mergedLayout.font) {
+            mergedLayout.font = { ...mergedLayout.font, ...darkConfig.font };
+        } else {
+            mergedLayout.font = darkConfig.font;
+        }
+        
+        if (mergedLayout.title && mergedLayout.title.font) {
+            mergedLayout.title.font = { ...mergedLayout.title.font, ...darkConfig.titlefont };
+        } else if (mergedLayout.title) {
+            mergedLayout.title.font = darkConfig.titlefont;
+        }
+        
+        if (mergedLayout.xaxis) {
+            mergedLayout.xaxis = { ...mergedLayout.xaxis, ...darkConfig.xaxis };
+            if (mergedLayout.xaxis.title && mergedLayout.xaxis.title.font) {
+                mergedLayout.xaxis.title.font = { ...mergedLayout.xaxis.title.font, color: '#e2e8f0' };
+            }
+            if (mergedLayout.xaxis.tickfont) {
+                mergedLayout.xaxis.tickfont = { ...mergedLayout.xaxis.tickfont, color: '#cbd5e1' };
+            }
+        } else {
+            mergedLayout.xaxis = darkConfig.xaxis;
+        }
+        
+        if (mergedLayout.yaxis) {
+            mergedLayout.yaxis = { ...mergedLayout.yaxis, ...darkConfig.yaxis };
+            if (mergedLayout.yaxis.title && mergedLayout.yaxis.title.font) {
+                mergedLayout.yaxis.title.font = { ...mergedLayout.yaxis.title.font, color: '#e2e8f0' };
+            }
+            if (mergedLayout.yaxis.tickfont) {
+                mergedLayout.yaxis.tickfont = { ...mergedLayout.yaxis.tickfont, color: '#cbd5e1' };
+            }
+        } else {
+            mergedLayout.yaxis = darkConfig.yaxis;
+        }
+        
+        if (mergedLayout.legend) {
+            mergedLayout.legend = { ...mergedLayout.legend, ...darkConfig.legend };
+        } else {
+            mergedLayout.legend = darkConfig.legend;
+        }
+        
+        return mergedLayout;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initializePage();
+        loadOverview();
+    });
+
+    function initializePage() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            enableDarkMode();
+        }
+
+        const savedMalignant = localStorage.getItem('malignantAnalysis');
+        if (savedMalignant === 'true') {
+            document.getElementById('malignant-checkbox').checked = true;
+            toggleMalignantAnalysis();
+        }
+    }
+
+    function toggleTheme() {
+        darkMode = !darkMode;
+        if (darkMode) {
+            enableDarkMode();
+        } else {
+            enableLightMode();
+        }
+    }
+
+    function enableDarkMode() {
+        document.body.classList.add('dark-mode');
+        document.body.classList.remove('light-mode');
+        document.querySelector('.main-content').classList.remove('light-mode');
+        document.getElementById('theme-icon').textContent = '☀️';
+        darkMode = true;
+        localStorage.setItem('theme', 'dark');
+        // 모든 Plotly 차트 재렌더링
+        updateAllPlotlyCharts();
+    }
+
+    function enableLightMode() {
+        document.body.classList.remove('dark-mode');
+        document.body.classList.add('light-mode');
+        document.querySelector('.main-content').classList.add('light-mode');
+        document.getElementById('theme-icon').textContent = '🌙';
+        darkMode = false;
+        localStorage.setItem('theme', 'light');
+        // 모든 Plotly 차트 재렌더링
+        updateAllPlotlyCharts();
+    }
+
+    // 모든 Plotly 차트 업데이트
+    function updateAllPlotlyCharts() {
+        const plotlyCharts = document.querySelectorAll('.js-plotly-plot');
+        plotlyCharts.forEach(chart => {
+            const update = {
+                font: { 
+                    color: darkMode ? '#e2e8f0' : '#1e293b',
+                    family: 'Malgun Gothic, sans-serif'
+                },
+                titlefont: { 
+                    color: darkMode ? '#ffffff' : '#1e293b'
+                },
+                xaxis: {
+                    titlefont: { color: darkMode ? '#e2e8f0' : '#1e293b' },
+                    tickfont: { color: darkMode ? '#cbd5e1' : '#475569' },
+                    gridcolor: darkMode ? 'rgba(72, 187, 180, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+                    zerolinecolor: darkMode ? 'rgba(72, 187, 180, 0.3)' : 'rgba(0, 0, 0, 0.2)'
+                },
+                yaxis: {
+                    titlefont: { color: darkMode ? '#e2e8f0' : '#1e293b' },
+                    tickfont: { color: darkMode ? '#cbd5e1' : '#475569' },
+                    gridcolor: darkMode ? 'rgba(72, 187, 180, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+                    zerolinecolor: darkMode ? 'rgba(72, 187, 180, 0.3)' : 'rgba(0, 0, 0, 0.2)'
+                },
+                legend: {
+                    font: { color: darkMode ? '#e2e8f0' : '#1e293b' }
+                }
+            };
+            Plotly.relayout(chart, update);
+        });
+    }
+
+    function toggleMalignantAnalysis() {
+        showMalignantAnalysis = document.getElementById('malignant-checkbox').checked;
+        const menuItem = document.getElementById('malignant-menu-item');
+
+        if (showMalignantAnalysis) {
+            menuItem.classList.remove('hidden');
+        } else {
+            menuItem.classList.add('hidden');
+            if (currentPage === 'malignant-analysis') {
+                showPage('overview');
+            }
+        }
+
+        localStorage.setItem('malignantAnalysis', showMalignantAnalysis);
+    }
+
+    // 차트 높이 통일
+    function getChartHeight(isFullWidth = false) {
+        if (currentPage === 'overview') {
+            return 500;
+        } else {
+            // full-width 차트는 더 높게
+            if (isFullWidth) {
+                return 550;
+            }
+            // 일반 차트는 일정한 높이
+            return 480;
+        }
+    }
+
+    // 윈도우 리사이즈 시 차트 업데이트
+    let resizeTimer;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+            const charts = document.querySelectorAll('.page-content:not(.hidden) .js-plotly-plot');
+            charts.forEach(chart => {
+                const newHeight = getChartHeight();
+                Plotly.relayout(chart, { 
+                    height: newHeight,
+                    autosize: true 
+                });
+            });
+        }, 250);
+    });
+
+    async function loadOverview() {
+        try {
+            const distRes = await fetch('/api/data/diagnosis-distribution');
+            const distData = await distRes.json();
+            const chartHeight = getChartHeight();
+
+            const pieData = [{
+                values: distData.values,
+                labels: distData.labels,
+                type: 'pie',
+                marker: { colors: distData.colors },
+                textinfo: 'label+percent',
+                textposition: 'inside'
+            }];
+
+            const pieLayout = {
+                title: { 
+                    text: '진단 분포', 
+                    font: { 
+                        size: 24, 
+                        family: 'Malgun Gothic, sans-serif',
+                        color: darkMode ? '#ffffff' : '#1e293b'
+                    } 
+                },
+                font: { 
+                    family: 'Malgun Gothic, sans-serif', 
+                    size: 16,
+                    color: darkMode ? '#e2e8f0' : '#1e293b'
+                },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                height: chartHeight,
+                ...(darkMode ? {
+                    xaxis: { tickfont: { color: '#cbd5e1' } },
+                    yaxis: { tickfont: { color: '#cbd5e1' } },
+                    legend: { font: { color: '#e2e8f0' } }
+                } : {})
+            };
+            const finalPieLayout = applyDarkModeToPlotlyLayout(pieLayout);
+            Plotly.newPlot('diagnosis-pie-chart', pieData, finalPieLayout, { responsive: true });
+
+            const barData = [{
+                x: distData.labels,
+                y: distData.values,
+                type: 'bar',
+                marker: { color: distData.colors },
+                textfont: { size: 16 }
+            }];
+
+            const barLayout = {
+                title: { 
+                    text: '진단별 샘플 수', 
+                    font: { 
+                        size: 24, 
+                        family: 'Malgun Gothic, sans-serif',
+                        color: darkMode ? '#ffffff' : '#1e293b'
+                    } 
+                },
+                font: { 
+                    family: 'Malgun Gothic, sans-serif', 
+                    size: 16,
+                    color: darkMode ? '#e2e8f0' : '#1e293b'
+                },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                height: chartHeight,
+                xaxis: { 
+                    title: { 
+                        text: '진단', 
+                        font: { size: 18, color: darkMode ? '#e2e8f0' : '#1e293b' } 
+                    }, 
+                    tickfont: { size: 14, color: darkMode ? '#cbd5e1' : '#475569' },
+                    gridcolor: darkMode ? 'rgba(72, 187, 180, 0.2)' : 'rgba(0, 0, 0, 0.1)'
+                },
+                yaxis: { 
+                    title: { 
+                        text: '샘플 수', 
+                        font: { size: 18, color: darkMode ? '#e2e8f0' : '#1e293b' } 
+                    }, 
+                    tickfont: { size: 14, color: darkMode ? '#cbd5e1' : '#475569' },
+                    gridcolor: darkMode ? 'rgba(72, 187, 180, 0.2)' : 'rgba(0, 0, 0, 0.1)'
+                }
+            };
+            const finalBarLayout = applyDarkModeToPlotlyLayout(barLayout);
+            Plotly.newPlot('diagnosis-bar-chart', barData, finalBarLayout, { responsive: true });
+
+            const overviewRes = await fetch('/api/data/overview');
+            const overviewData = await overviewRes.json();
+
+            if (overviewData.error) {
+                document.getElementById('overview-metrics').innerHTML = `<p>오류: ${overviewData.error}</p>`;
+                return;
+            }
+
+            document.getElementById('overview-metrics').innerHTML = `
+                <div class="metric-card">
+                    <label>총 샘플 수</label>
+                    <div class="value">${overviewData.total_samples}</div>
+                </div>
+                <div class="metric-card">
+                    <label>양성 (B) 샘플</label>
+                    <div class="value">${overviewData.benign_count}</div>
+                </div>
+                <div class="metric-card">
+                    <label>악성 (M) 샘플</label>
+                    <div class="value">${overviewData.malignant_count}</div>
+                </div>
+                <div class="metric-card">
+                    <label>악성 비율</label>
+                    <div class="value">${overviewData.malignant_pct}%</div>
+                </div>
+            `;
+
+            const previewRes = await fetch('/api/data/preview');
+            const previewData = await previewRes.json();
+
+            if (previewData.error) {
+                document.getElementById('data-preview').innerHTML = `<p>오류: ${previewData.error}</p>`;
+                return;
+            }
+
+            let tableHTML = '<table><thead><tr>';
+            previewData.columns.forEach(col => {
+                tableHTML += `<th>${col}</th>`;
+            });
+            tableHTML += '</tr></thead><tbody>';
+
+            previewData.data.forEach(row => {
+                tableHTML += '<tr>';
+                row.forEach(cell => {
+                    tableHTML += `<td>${typeof cell === 'number' ? cell.toFixed(2) : cell}</td>`;
+                });
+                tableHTML += '</tr>';
+            });
+            tableHTML += '</tbody></table>';
+
+            document.getElementById('data-preview').innerHTML = tableHTML;
+
+        } catch (error) {
+            console.error('개요 데이터 로드 오류:', error);
+            document.getElementById('overview-metrics').innerHTML = `<p>데이터 로드 오류: ${error.message}</p>`;
+        }
+    }
+
+    async function loadVisualization() {
+        try {
+            const featuresRes = await fetch('/api/features/list');
+            const featuresData = await featuresRes.json();
+
+            if (featuresData.error) {
+                document.getElementById('feature-selector').innerHTML = `<p>오류: ${featuresData.error}</p>`;
+                return;
+            }
+
+            const features = featuresData.features.slice(0, 10);
+            let checkboxesHTML = '<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0;">';
+            features.forEach((feature, index) => {
+                checkboxesHTML += `
+                    <label style="display: flex; align-items: center; gap: 0.25rem;">
+                        <input type="checkbox" class="feature-checkbox" value="${feature}" ${index < 5 ? 'checked' : ''}>
+                        <span>${feature}</span>
+                    </label>
+                `;
+            });
+            checkboxesHTML += '</div>';
+            checkboxesHTML += '<button class="btn" onclick="loadBoxplot()">Boxplot 생성</button>';
+            document.getElementById('feature-selector').innerHTML = checkboxesHTML;
+
+            let histCheckboxesHTML = '<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0;">';
+            features.slice(0, 10).forEach((feature, index) => {
+                histCheckboxesHTML += `
+                    <label style="display: flex; align-items: center; gap: 0.25rem;">
+                        <input type="checkbox" class="hist-feature-checkbox" value="${feature}" ${index < 3 ? 'checked' : ''}>
+                        <span>${feature}</span>
+                    </label>
+                `;
+            });
+            histCheckboxesHTML += '</div>';
+            histCheckboxesHTML += '<button class="btn" onclick="loadHistogram()">히스토그램 생성</button>';
+            document.getElementById('histogram-feature-selector').innerHTML = histCheckboxesHTML;
+
+            loadBoxplot();
+            loadHistogram();
+
+        } catch (error) {
+            console.error('시각화 페이지 로드 오류:', error);
+        }
+    }
+
+    async function loadBoxplot() {
+        const selectedFeatures = Array.from(document.querySelectorAll('.feature-checkbox:checked'))
+            .map(cb => cb.value);
+
+        if (selectedFeatures.length === 0) {
+            document.getElementById('boxplot-chart').innerHTML = '<p>최소 1개 이상의 특징을 선택해주세요.</p>';
+            return;
+        }
+
+        try {
+            const params = new URLSearchParams();
+            selectedFeatures.forEach(f => params.append('features', f));
+
+            const res = await fetch(`/api/visualization/boxplot?${params.toString()}`);
+            const data = await res.json();
+
+            if (data.error) {
+                document.getElementById('boxplot-chart').innerHTML = `<p>오류: ${data.error}</p>`;
+                return;
+            }
+
+            const traces = data.data.map(item => ({
+                y: item.values,
+                name: item.feature,
+                type: 'box',
+                boxmean: 'sd'
+            }));
+
+            const boxplotLayout = {
+                title: { 
+                    text: '특징별 Boxplot',
+                    font: { 
+                        family: 'Malgun Gothic, sans-serif',
+                        color: darkMode ? '#ffffff' : '#1e293b'
+                    }
+                },
+                font: { 
+                    family: 'Malgun Gothic, sans-serif',
+                    color: darkMode ? '#e2e8f0' : '#1e293b'
+                },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                height: getChartHeight()
+            };
+            const finalBoxplotLayout = applyDarkModeToPlotlyLayout(boxplotLayout);
+            Plotly.newPlot('boxplot-chart', traces, finalBoxplotLayout, { responsive: true });
+
+        } catch (error) {
+            console.error('Boxplot 로드 오류:', error);
+            document.getElementById('boxplot-chart').innerHTML = `<p>오류: ${error.message}</p>`;
+        }
+    }
+
+    async function loadHistogram() {
+        const selectedFeatures = Array.from(document.querySelectorAll('.hist-feature-checkbox:checked'))
+            .map(cb => cb.value);
+
+        if (selectedFeatures.length === 0) {
+            document.getElementById('histogram-chart').innerHTML = '<p>최소 1개 이상의 특징을 선택해주세요.</p>';
+            return;
+        }
+
+        try {
+            const params = new URLSearchParams();
+            selectedFeatures.forEach(f => params.append('features', f));
+
+            const res = await fetch(`/api/visualization/histogram?${params.toString()}`);
+            const data = await res.json();
+
+            if (data.error) {
+                document.getElementById('histogram-chart').innerHTML = `<p>오류: ${data.error}</p>`;
+                return;
+            }
+
+            const traces = [];
+            data.data.forEach((item, idx) => {
+                traces.push({
+                    x: item.benign,
+                    name: idx === 0 ? '양성 (B)' : '',
+                    type: 'histogram',
+                    marker: { color: '#48BBB4' },
+                    opacity: 0.7,
+                    showlegend: idx === 0
+                });
+                traces.push({
+                    x: item.malignant,
+                    name: idx === 0 ? '악성 (M)' : '',
+                    type: 'histogram',
+                    marker: { color: '#FF6B9D' },
+                    opacity: 0.7,
+                    showlegend: idx === 0
+                });
+            });
+
+            const histogramLayout = {
+                title: { 
+                    text: '진단별 특징 분포 비교',
+                    font: { 
+                        family: 'Malgun Gothic, sans-serif',
+                        color: darkMode ? '#ffffff' : '#1e293b'
+                    }
+                },
+                font: { 
+                    family: 'Malgun Gothic, sans-serif',
+                    color: darkMode ? '#e2e8f0' : '#1e293b'
+                },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                barmode: 'overlay',
+                height: getChartHeight()
+            };
+            const finalHistogramLayout = applyDarkModeToPlotlyLayout(histogramLayout);
+            Plotly.newPlot('histogram-chart', traces, finalHistogramLayout, { responsive: true });
+
+        } catch (error) {
+            console.error('히스토그램 로드 오류:', error);
+            document.getElementById('histogram-chart').innerHTML = `<p>오류: ${error.message}</p>`;
+        }
+    }
+
+    async function trainModels() {
+        const btn = event.target;
+        btn.disabled = true;
+        btn.textContent = '학습 중...';
+
+        try {
+            const res = await fetch('/api/ml/train');
+            const data = await res.json();
+
+            if (data.error) {
+                alert(`오류: ${data.error}`);
+                btn.disabled = false;
+                btn.textContent = '모델 학습';
+                return;
+            }
+
+            document.getElementById('rf-accuracy').textContent = `${(data.rf_accuracy * 100).toFixed(2)}%`;
+            document.getElementById('dt-accuracy').textContent = `${(data.dt_accuracy * 100).toFixed(2)}%`;
+
+            const rfCmLayout = {
+                xaxis: { title: '예측', tickvals: [0, 1], ticktext: ['양성 (B)', '악성 (M)'] },
+                yaxis: { title: '실제', tickvals: [0, 1], ticktext: ['양성 (B)', '악성 (M)'] },
+                title: { 
+                    text: 'Random Forest Confusion Matrix',
+                    font: { 
+                        family: 'Malgun Gothic, sans-serif',
+                        color: darkMode ? '#ffffff' : '#1e293b'
+                    }
+                },
+                font: { 
+                    family: 'Malgun Gothic, sans-serif',
+                    color: darkMode ? '#e2e8f0' : '#1e293b'
+                },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                height: getChartHeight()
+            };
+            const finalRfCmLayout = applyDarkModeToPlotlyLayout(rfCmLayout);
+            Plotly.newPlot('rf-cm-chart', [{
+                z: data.rf_cm,
+                type: 'heatmap',
+                colorscale: 'Blues',
+                text: data.rf_cm.map(row => row.map(val => val.toString())),
+                texttemplate: '%{text}',
+                textfont: { size: 16, color: darkMode ? '#ffffff' : '#1e293b' },
+                showscale: false
+            }], finalRfCmLayout, { responsive: true });
+
+            const dtCmLayout = {
+                xaxis: { title: '예측', tickvals: [0, 1], ticktext: ['양성 (B)', '악성 (M)'] },
+                yaxis: { title: '실제', tickvals: [0, 1], ticktext: ['양성 (B)', '악성 (M)'] },
+                title: { 
+                    text: 'Decision Tree Confusion Matrix',
+                    font: { 
+                        family: 'Malgun Gothic, sans-serif',
+                        color: darkMode ? '#ffffff' : '#1e293b'
+                    }
+                },
+                font: { 
+                    family: 'Malgun Gothic, sans-serif',
+                    color: darkMode ? '#e2e8f0' : '#1e293b'
+                },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                height: getChartHeight()
+            };
+            const finalDtCmLayout = applyDarkModeToPlotlyLayout(dtCmLayout);
+            Plotly.newPlot('dt-cm-chart', [{
+                z: data.dt_cm,
+                type: 'heatmap',
+                colorscale: 'Oranges',
+                text: data.dt_cm.map(row => row.map(val => val.toString())),
+                texttemplate: '%{text}',
+                textfont: { size: 16, color: darkMode ? '#ffffff' : '#1e293b' },
+                showscale: false
+            }], finalDtCmLayout, { responsive: true });
+
+            const featureImportanceLayout = {
+                title: { 
+                    text: 'Feature Importance (상위 15개)',
+                    font: { 
+                        family: 'Malgun Gothic, sans-serif',
+                        color: darkMode ? '#ffffff' : '#1e293b'
+                    }
+                },
+                xaxis: { title: '중요도' },
+                yaxis: { title: '특징' },
+                font: { 
+                    family: 'Malgun Gothic, sans-serif',
+                    color: darkMode ? '#e2e8f0' : '#1e293b'
+                },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                height: getChartHeight(true)
+            };
+            const finalFeatureImportanceLayout = applyDarkModeToPlotlyLayout(featureImportanceLayout);
+            Plotly.newPlot('feature-importance-chart', [{
+                x: data.feature_importance.importance,
+                y: data.feature_importance.features,
+                type: 'bar',
+                orientation: 'h',
+                marker: { color: data.feature_importance.importance, colorscale: 'Viridis' }
+            }], finalFeatureImportanceLayout, { responsive: true });
+
+            btn.disabled = false;
+            btn.textContent = '모델 학습';
+
+            modelsTrained = true;
+            updateXAIButton();
+            alert('모델 학습이 완료되었습니다! 이제 XAI 분석을 실행할 수 있습니다.');
+
+        } catch (error) {
+            console.error('모델 학습 오류:', error);
+            alert(`오류: ${error.message}`);
+            btn.disabled = false;
+            btn.textContent = '모델 학습';
+        }
+    }
+
+    function updateXAIButton() {
+        const noticeText = document.getElementById('xai-notice-text');
+        const runBtn = document.getElementById('xai-run-btn');
+
+        if (modelsTrained) {
+            noticeText.textContent = '✅ 모델 학습이 완료되었습니다. XAI 분석을 실행할 수 있습니다!';
+            noticeText.style.color = '#48BBB4';
+            noticeText.style.fontWeight = '600';
+            runBtn.classList.remove('hidden');
+            runBtn.style.display = 'inline-block';
+        } else {
+            noticeText.textContent = 'XAI 분석 기능은 모델 학습 후 사용할 수 있습니다.';
+            noticeText.style.color = '';
+            noticeText.style.fontWeight = '400';
+            runBtn.classList.add('hidden');
+            runBtn.style.display = 'none';
+        }
+    }
+
+    async function runXAI() {
+        if (!modelsTrained) {
+            alert('먼저 모델을 학습시켜주세요.');
+            return;
+        }
+
+        const btn = event.target;
+        btn.disabled = true;
+        btn.textContent = 'XAI 분석 중...';
+
+        document.getElementById('xai-shap-chart').innerHTML = '<div class="spinner"></div><p>SHAP 분석 중...</p>';
+        document.getElementById('xai-lime-chart').innerHTML = '<div class="spinner"></div><p>LIME 분석 중...</p>';
+
+        try {
+            const shapRes = await fetch('/api/xai/shap');
+            if (!shapRes.ok) {
+                const errorText = await shapRes.text();
+                throw new Error(`서버 오류 (${shapRes.status}): ${errorText}`);
+            }
+            const shapData = await shapRes.json();
+
+            if (shapData.error) {
+                document.getElementById('xai-shap-chart').innerHTML = `<p style="color: red; padding: 2rem;">오류: ${shapData.error}</p>`;
+            } else {
+                Plotly.newPlot('xai-shap-chart', [{
+                    x: shapData.importance,
+                    y: shapData.features,
+                    type: 'bar',
+                    orientation: 'h',
+                    marker: {
+                        color: shapData.importance,
+                        colorscale: 'Viridis'
+                    }
+                }], {
+                    title: 'SHAP Feature Importance',
+                    xaxis: { title: 'SHAP Value' },
+                    yaxis: { title: 'Feature' },
+                    font: { family: 'Malgun Gothic, sans-serif', size: 14 },
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    height: getChartHeight()
+                }, { responsive: true });
+            }
+
+            const limeRes = await fetch('/api/xai/lime');
+            if (!limeRes.ok) {
+                const errorText = await limeRes.text();
+                throw new Error(`서버 오류 (${limeRes.status}): ${errorText}`);
+            }
+            const limeData = await limeRes.json();
+
+            if (limeData.error) {
+                document.getElementById('xai-lime-chart').innerHTML = `<p style="color: red; padding: 2rem;">오류: ${limeData.error}</p>`;
+            } else {
+                let limeHTML = '<div style="padding: 1rem; height: 100%; overflow-y: auto;">';
+                limeHTML += `<h4 style="margin-bottom: 1rem;">예측 결과: ${limeData.prediction}</h4>`;
+                limeHTML += `<h4 style="margin-bottom: 0.5rem; font-size: 0.9rem;">실제 라벨: ${limeData.true_label || 'N/A'}</h4>`;
+                limeHTML += '<h4 style="margin-bottom: 1rem; margin-top: 1.5rem;">특징 중요도:</h4>';
+                limeHTML += '<table style="width: 100%; border-collapse: collapse;">';
+                limeData.explanation.forEach((item, idx) => {
+                    const color = item.value > 0 ? '#48BBB4' : '#FF6B9D';
+                    const bgColor = idx % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.02)';
+                    limeHTML += `<tr style="border-bottom: 1px solid #e2e8f0; background: ${bgColor};">
+                        <td style="padding: 0.75rem; width: 60%; font-size: 0.9rem;">${item.feature}</td>
+                        <td style="padding: 0.75rem; text-align: right; color: ${color}; font-weight: 600;">${item.value > 0 ? '+' : ''}${item.value.toFixed(4)}</td>
+                    </tr>`;
+                });
+                limeHTML += '</table></div>';
+                document.getElementById('xai-lime-chart').innerHTML = limeHTML;
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'XAI 분석 실행';
+            alert('XAI 분석이 완료되었습니다!');
+
+        } catch (error) {
+            console.error('XAI 분석 오류:', error);
+            const errorMsg = error.message || '알 수 없는 오류가 발생했습니다.';
+            alert(`오류: ${errorMsg}`);
+            document.getElementById('xai-shap-chart').innerHTML = `<p style="color: red; padding: 2rem;">오류: ${errorMsg}</p>`;
+            document.getElementById('xai-lime-chart').innerHTML = `<p style="color: red; padding: 2rem;">오류: ${errorMsg}</p>`;
+            btn.disabled = false;
+            btn.textContent = 'XAI 분석 실행';
+        }
+    }
+
+    function showPage(pageName) {
+        document.querySelectorAll('.page-content').forEach(page => {
+            page.classList.add('hidden');
+        });
+        document.getElementById(`page-${pageName}`).classList.remove('hidden');
+
+        document.querySelectorAll('.sidebar-menu-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        event.target.closest('.sidebar-menu-item').classList.add('active');
+
+        currentPage = pageName;
+
+        if (pageName === 'xai-analysis') {
+            updateXAIButton();
+        }
+
+        switch (pageName) {
+            case 'overview':
+                loadOverview();
+                break;
+            case 'visualization':
+                loadVisualization();
+                break;
+        }
+    }
+
+    async function updatePCA() {
+        const nComponents = parseInt(document.getElementById('pca-components').value);
+
+        try {
+            const res = await fetch(`/api/dimension-reduction/pca?n_components=${nComponents}`);
+            const data = await res.json();
+
+            if (data.error) {
+                document.getElementById('pca-chart').innerHTML = `<p>오류: ${data.error}</p>`;
+                return;
+            }
+
+            let chartHTML = `
+                <p><strong>설명된 분산 비율:</strong> ${data.explained_variance.map(v => (v * 100).toFixed(2) + '%').join(', ')}</p>
+                <p><strong>총 설명된 분산:</strong> ${(data.total_explained * 100).toFixed(2)}%</p>
+                <div id="pca-plot"></div>
+            `;
+            document.getElementById('pca-chart').innerHTML = chartHTML;
+
+            if (nComponents === 2) {
+                const traces = [{
+                    x: data.data.map(d => d[0]),
+                    y: data.data.map(d => d[1]),
+                    mode: 'markers',
+                    type: 'scatter',
+                    marker: {
+                        color: data.labels,
+                        colorscale: [[0, '#48BBB4'], [1, '#FF6B9D']],
+                        size: 5,
+                        opacity: 0.7
+                    },
+                    text: data.labels.map(l => l === 0 ? '양성 (B)' : '악성 (M)'),
+                    hovertemplate: '%{text}<br>PC1: %{x:.2f}<br>PC2: %{y:.2f}<extra></extra>'
+                }];
+
+                Plotly.newPlot('pca-plot', traces, {
+                    title: `PCA ${nComponents}D 시각화`,
+                    xaxis: { title: `PC1 (${(data.explained_variance[0] * 100).toFixed(2)}%)` },
+                    yaxis: { title: `PC2 (${(data.explained_variance[1] * 100).toFixed(2)}%)` },
+                    font: { family: 'Malgun Gothic, sans-serif' },
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    height: getChartHeight()
+                }, { responsive: true });
+            } else {
+                const trace = {
+                    x: data.data.map(d => d[0]),
+                    y: data.data.map(d => d[1]),
+                    z: data.data.map(d => d[2]),
+                    mode: 'markers',
+                    type: 'scatter3d',
+                    marker: {
+                        color: data.labels,
+                        colorscale: [[0, '#48BBB4'], [1, '#FF6B9D']],
+                        size: 3,
+                        opacity: 0.7
+                    },
+                    text: data.labels.map(l => l === 0 ? '양성 (B)' : '악성 (M)')
+                };
+
+                Plotly.newPlot('pca-plot', [trace], {
+                    title: `PCA ${nComponents}D 시각화`,
+                    scene: {
+                        xaxis: { title: `PC1 (${(data.explained_variance[0] * 100).toFixed(2)}%)` },
+                        yaxis: { title: `PC2 (${(data.explained_variance[1] * 100).toFixed(2)}%)` },
+                        zaxis: { title: `PC3 (${(data.explained_variance[2] * 100).toFixed(2)}%)` }
+                    },
+                    font: { family: 'Malgun Gothic, sans-serif' },
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    height: getChartHeight()
+                }, { responsive: true });
+            }
+
+        } catch (error) {
+            console.error('PCA 오류:', error);
+            document.getElementById('pca-chart').innerHTML = `<p>오류: ${error.message}</p>`;
+        }
+    }
+
+    async function updateTSNE() {
+        const nComponents = parseInt(document.getElementById('tsne-components').value);
+        const perplexity = parseInt(document.getElementById('tsne-perplexity').value);
+
+        document.getElementById('tsne-chart').innerHTML = '<div class="spinner"></div><p>t-SNE 계산 중... (시간이 걸릴 수 있습니다)</p>';
+
+        try {
+            const res = await fetch(`/api/dimension-reduction/tsne?n_components=${nComponents}&perplexity=${perplexity}`);
+            const data = await res.json();
+
+            if (data.error) {
+                document.getElementById('tsne-chart').innerHTML = `<p>오류: ${data.error}</p>`;
+                return;
+            }
+
+            document.getElementById('tsne-chart').innerHTML = '<div id="tsne-plot"></div>';
+
+            if (nComponents === 2) {
+                const trace = {
+                    x: data.data.map(d => d[0]),
+                    y: data.data.map(d => d[1]),
+                    mode: 'markers',
+                    type: 'scatter',
+                    marker: {
+                        color: data.labels,
+                        colorscale: [[0, '#48BBB4'], [1, '#FF6B9D']],
+                        size: 5,
+                        opacity: 0.7
+                    },
+                    text: data.labels.map(l => l === 0 ? '양성 (B)' : '악성 (M)'),
+                    hovertemplate: '%{text}<br>t-SNE 1: %{x:.2f}<br>t-SNE 2: %{y:.2f}<extra></extra>'
+                };
+
+                Plotly.newPlot('tsne-plot', [trace], {
+                    title: 't-SNE 2D 시각화',
+                    xaxis: { title: 't-SNE 1' },
+                    yaxis: { title: 't-SNE 2' },
+                    font: { family: 'Malgun Gothic, sans-serif' },
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    height: getChartHeight()
+                }, { responsive: true });
+            } else {
+                const trace = {
+                    x: data.data.map(d => d[0]),
+                    y: data.data.map(d => d[1]),
+                    z: data.data.map(d => d[2]),
+                    mode: 'markers',
+                    type: 'scatter3d',
+                    marker: {
+                        color: data.labels,
+                        colorscale: [[0, '#48BBB4'], [1, '#FF6B9D']],
+                        size: 3,
+                        opacity: 0.7
+                    },
+                    text: data.labels.map(l => l === 0 ? '양성 (B)' : '악성 (M)')
+                };
+
+                Plotly.newPlot('tsne-plot', [trace], {
+                    title: 't-SNE 3D 시각화',
+                    scene: {
+                        xaxis: { title: 't-SNE 1' },
+                        yaxis: { title: 't-SNE 2' },
+                        zaxis: { title: 't-SNE 3' }
+                    },
+                    font: { family: 'Malgun Gothic, sans-serif' },
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    height: getChartHeight()
+                }, { responsive: true });
+            }
+
+        } catch (error) {
+            console.error('t-SNE 오류:', error);
+            document.getElementById('tsne-chart').innerHTML = `<p>오류: ${error.message}</p>`;
+        }
+    }
+
+    async function loadCorrelationMatrix() {
+        document.getElementById('correlation-chart').innerHTML = '<div class="spinner"></div><p>상관관계 행렬 계산 중...</p>';
+
+        try {
+            const res = await fetch('/api/correlation/matrix');
+            const data = await res.json();
+
+            if (data.error) {
+                document.getElementById('correlation-chart').innerHTML = `<p>오류: ${data.error}</p>`;
+                return;
+            }
+
+            // 특징 개수에 따라 높이와 폰트 크기 동적 조절
+            const featureCount = data.features.length;
+            
+            // 히트맵 컨테이너 너비 가져오기
+            const chartContainer = document.getElementById('correlation-chart').parentElement;
+            const containerWidth = chartContainer.offsetWidth || 1200;
+            
+            // 정사각형 형태를 위해 높이를 너비에 맞춤 (마진 고려)
+            const baseHeight = Math.max(700, containerWidth - 200);
+            const dynamicHeight = Math.max(baseHeight, featureCount * 28);
+            
+            // 폰트 크기와 각도 동적 조절
+            let fontSize, tickAngle, dtick;
+            if (featureCount > 40) {
+                fontSize = 8;
+                tickAngle = -70;
+                dtick = Math.ceil(featureCount / 20);
+            } else if (featureCount > 30) {
+                fontSize = 9;
+                tickAngle = -60;
+                dtick = Math.ceil(featureCount / 18);
+            } else if (featureCount > 20) {
+                fontSize = 10;
+                tickAngle = -50;
+                dtick = Math.ceil(featureCount / 15);
+            } else {
+                fontSize = 11;
+                tickAngle = -45;
+                dtick = 1;
+            }
+
+            const correlationLayout = {
+                title: { 
+                    text: '상관관계 히트맵',
+                    font: { 
+                        family: 'Malgun Gothic, sans-serif',
+                        size: 18,
+                        color: darkMode ? '#ffffff' : '#1e293b'
+                    }
+                },
+                xaxis: { 
+                    title: { 
+                        text: '특징',
+                        font: { 
+                            size: 14,
+                            color: darkMode ? '#e2e8f0' : '#1e293b'
+                        },
+                        standoff: 20
+                    },
+                    tickangle: tickAngle,
+                    tickfont: { 
+                        size: fontSize,
+                        color: darkMode ? '#cbd5e1' : '#475569'
+                    },
+                    automargin: true,
+                    side: 'bottom',
+                    dtick: dtick,
+                    tickmode: 'linear',
+                    showticklabels: true,
+                    showgrid: false,
+                    ticklen: 4,
+                    tickwidth: 1
+                },
+                yaxis: { 
+                    title: { 
+                        text: '특징',
+                        font: { 
+                            size: 14,
+                            color: darkMode ? '#e2e8f0' : '#1e293b'
+                        },
+                        standoff: 20
+                    },
+                    tickfont: { 
+                        size: fontSize,
+                        color: darkMode ? '#cbd5e1' : '#475569'
+                    },
+                    automargin: true,
+                    side: 'left',
+                    dtick: dtick,
+                    tickmode: 'linear',
+                    showticklabels: true,
+                    showgrid: false,
+                    ticklen: 4,
+                    tickwidth: 1
+                },
+                font: { 
+                    family: 'Malgun Gothic, sans-serif',
+                    size: fontSize,
+                    color: darkMode ? '#e2e8f0' : '#1e293b'
+                },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                height: dynamicHeight,
+                autosize: true,
+                margin: {
+                    l: Math.max(120, featureCount * 3),
+                    r: 80,
+                    t: 80,
+                    b: Math.max(150, featureCount * 3)
+                },
+                showlegend: true,
+                coloraxis: {
+                    colorbar: {
+                        title: {
+                            text: '상관계수',
+                            font: {
+                                size: 12,
+                                color: darkMode ? '#e2e8f0' : '#1e293b'
+                            }
+                        },
+                        tickfont: {
+                            size: 11,
+                            color: darkMode ? '#cbd5e1' : '#475569'
+                        },
+                        len: 0.8,
+                        y: 0.5,
+                        yanchor: 'middle'
+                    }
+                }
+            };
+            
+            // 히트맵에 표시할 숫자 텍스트 생성 (소수점 3자리)
+            // Plotly 히트맵은 2D 배열 형태의 텍스트를 필요로 함
+            const textValues = [];
+            const textColors = [];
+            
+            for (let i = 0; i < data.matrix.length; i++) {
+                textValues[i] = [];
+                textColors[i] = [];
+                for (let j = 0; j < data.matrix[i].length; j++) {
+                    const val = data.matrix[i][j];
+                    textValues[i][j] = val.toFixed(3);
+                    // 절댓값이 큰 경우 밝은 색, 작은 경우 어두운 색
+                    if (darkMode) {
+                        textColors[i][j] = Math.abs(val) > 0.4 ? '#ffffff' : '#e2e8f0';
+                    } else {
+                        textColors[i][j] = Math.abs(val) > 0.4 ? '#ffffff' : '#1e293b';
+                    }
+                }
+            }
+            
+            // 텍스트 폰트 크기 (특징 개수에 따라 동적으로 조절)
+            const textFontSize = Math.max(8, Math.min(11, 11 - Math.floor(featureCount / 12)));
+
+            // 다크/라이트 모드에 따른 색상 스케일 (고급스러운 그라데이션)
+            let colorScale;
+            if (darkMode) {
+                // 다크 모드: 깊은 파란색 → 밝은 보라색 → 분홍색 → 따뜻한 빨간색 (고급스러운 그라데이션)
+                colorScale = [
+                    [0, 'rgb(8, 29, 88)'],        // 매우 진한 네이비 블루
+                    [0.2, 'rgb(26, 65, 152)'],    // 진한 블루
+                    [0.4, 'rgb(72, 72, 180)'],    // 보라 블루
+                    [0.5, 'rgb(100, 80, 160)'],   // 중간 보라색
+                    [0.6, 'rgb(150, 90, 180)'],   // 밝은 보라색
+                    [0.8, 'rgb(220, 100, 140)'],  // 따뜻한 분홍색
+                    [1, 'rgb(255, 120, 120)']     // 밝은 코랄 레드
+                ];
+            } else {
+                // 라이트 모드: 깊은 블루 → 밝은 시안 → 크림 → 살몬 → 깊은 레드 (우아한 그라데이션)
+                colorScale = [
+                    [0, 'rgb(5, 48, 97)'],        // 네이비 블루
+                    [0.2, 'rgb(66, 146, 198)'],   // 스카이 블루
+                    [0.4, 'rgb(118, 200, 221)'],  // 밝은 시안
+                    [0.5, 'rgb(250, 250, 250)'],  // 거의 흰색
+                    [0.6, 'rgb(255, 230, 204)'],  // 크림색
+                    [0.8, 'rgb(255, 165, 140)'],  // 살몬 핑크
+                    [1, 'rgb(220, 53, 69)']       // 진한 로즈 레드
+                ];
+            }
+
+            const finalCorrelationLayout = applyDarkModeToPlotlyLayout(correlationLayout);
+            
+            // 히트맵 트레이스 생성 - 텍스트 표시 확실하게
+            // Plotly 히트맵에서 텍스트를 표시하려면 text와 texttemplate이 모두 필요
+            const heatmapTrace = {
+                z: data.matrix,
+                x: data.features,
+                y: data.features,
+                type: 'heatmap',
+                colorscale: colorScale,
+                zmid: 0,
+                zmin: -1,
+                zmax: 1,
+                text: textValues,
+                texttemplate: '%{text}',
+                textfont: {
+                    size: textFontSize,
+                    family: 'Malgun Gothic, sans-serif'
+                },
+                hovertemplate: '<b>%{fullData.x[%{point.x}]} vs %{fullData.y[%{point.y}]}</b><br>상관계수: %{z:.3f}<extra></extra>',
+                showscale: true,
+                hoverongaps: false,
+                showlegend: false,
+                transpose: false,
+                xgap: 0.5,
+                ygap: 0.5
+            };
+
+            // 레이아웃에 텍스트 표시를 위한 추가 설정
+            finalCorrelationLayout.showlegend = false;
+            
+            // 특징 개수가 적을 때 annotations 추가 (텍스트 표시를 위한 대안)
+            // 하지만 annotations는 성능 문제가 있으므로 주석 처리하고 texttemplate 사용
+            // finalCorrelationLayout.annotations = [];
+            
+            // Plotly 히트맵 생성
+            const plotConfig = { 
+                responsive: true,
+                displayModeBar: true
+            };
+            
+            Plotly.newPlot('correlation-chart', [heatmapTrace], finalCorrelationLayout, plotConfig);
+            
+            // 차트 생성 후 텍스트 강제 표시를 위한 재시도
+            setTimeout(function() {
+                const graphDiv = document.getElementById('correlation-chart');
+                if (graphDiv) {
+                    // 텍스트 표시를 확인하고 필요시 업데이트
+                    Plotly.redraw(graphDiv);
+                    
+                    // texttemplate이 작동하지 않으면 annotations 사용
+                    if (featureCount <= 25) {
+                        const annotations = [];
+                        const cellWidth = 1 / featureCount;
+                        const cellHeight = 1 / featureCount;
+                        
+                        for (let i = 0; i < featureCount && i < 25; i++) {
+                            for (let j = 0; j < featureCount && j < 25; j++) {
+                                const val = data.matrix[i][j];
+                                annotations.push({
+                                    x: j,
+                                    y: i,
+                                    text: val.toFixed(3),
+                                    showarrow: false,
+                                    font: {
+                                        size: textFontSize,
+                                        color: textColors[i][j],
+                                        family: 'Malgun Gothic, sans-serif'
+                                    },
+                                    bgcolor: 'rgba(0,0,0,0)',
+                                    bordercolor: 'rgba(0,0,0,0)'
+                                });
+                            }
+                        }
+                        
+                        // annotations 추가 (텍스트가 표시되지 않을 때만)
+                        Plotly.relayout(graphDiv, {
+                            annotations: annotations
+                        });
+                    }
+                }
+            }, 500);
+
+        } catch (error) {
+            console.error('상관관계 행렬 오류:', error);
+            document.getElementById('correlation-chart').innerHTML = `<p>오류: ${error.message}</p>`;
+        }
+    }
+
+    async function analyzeMalignant() {
+        const btn = event.target;
+        btn.disabled = true;
+        btn.textContent = '분석 중...';
+
+        document.getElementById('malignant-results').innerHTML = '<div class="spinner"></div><p>악성 심각도 분석 중...</p>';
+
+        try {
+            const res = await fetch('/api/malignant/analyze');
+            const data = await res.json();
+
+            if (data.error) {
+                document.getElementById('malignant-results').innerHTML = `<p>오류: ${data.error}</p>`;
+                btn.disabled = false;
+                btn.textContent = '악성 심각도 분석 실행';
+                return;
+            }
+
+            let resultsHTML = `
+                <h3>📊 악성 심각도 분포</h3>
+                <div class="metric-grid" style="margin: 1rem 0;">
+                    <div class="metric-card">
+                        <label>저악성 (0)</label>
+                        <div class="value">${data.low_severity_count}</div>
+                    </div>
+                    <div class="metric-card">
+                        <label>고악성 (1)</label>
+                        <div class="value">${data.high_severity_count}</div>
+                    </div>
+                    <div class="metric-card">
+                        <label>고악성 비율</label>
+                        <div class="value">${data.high_severity_pct}%</div>
+                    </div>
+                    <div class="metric-card">
+                        <label>모델 정확도</label>
+                        <div class="value">${(data.model_accuracy * 100).toFixed(2)}%</div>
+                    </div>
+                </div>
+
+                <div class="widget-grid" style="margin-top: 2rem;">
+                    <div class="chart-container">
+                        <h3>악성 심각도 분포 (파이 차트)</h3>
+                        <div id="malignant-severity-pie"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <h3>혼동행렬</h3>
+                        <div id="malignant-cm"></div>
+                    </div>
+
+                    <div class="chart-container full-width-chart">
+                        <h3>악성 심각도 예측에 중요한 특징 (상위 15개)</h3>
+                        <div id="malignant-importance"></div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('malignant-results').innerHTML = resultsHTML;
+
+            Plotly.newPlot('malignant-severity-pie', [{
+                values: [data.low_severity_count, data.high_severity_count],
+                labels: ['저악성 (0)', '고악성 (1)'],
+                type: 'pie',
+                marker: { colors: ['#48BBB4', '#FF6B9D'] },
+                textinfo: 'label+percent',
+                textposition: 'inside'
+            }], {
+                title: '악성 심각도 분포',
+                font: { family: 'Malgun Gothic, sans-serif' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                height: getChartHeight()
+            }, { responsive: true });
+
+            Plotly.newPlot('malignant-cm', [{
+                z: data.confusion_matrix,
+                type: 'heatmap',
+                colorscale: 'Blues',
+                text: data.confusion_matrix.map(row => row.map(val => val.toString())),
+                texttemplate: '%{text}',
+                textfont: { size: 16 },
+                showscale: false
+            }], {
+                xaxis: { title: '예측', tickvals: [0, 1], ticktext: ['저악성', '고악성'] },
+                yaxis: { title: '실제', tickvals: [0, 1], ticktext: ['저악성', '고악성'] },
+                title: '혼동행렬',
+                font: { family: 'Malgun Gothic, sans-serif' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                height: getChartHeight()
+            }, { responsive: true });
+
+            Plotly.newPlot('malignant-importance', [{
+                x: data.feature_importance.importance,
+                y: data.feature_importance.features,
+                type: 'bar',
+                orientation: 'h',
+                marker: { color: data.feature_importance.importance, colorscale: 'Reds' }
+            }], {
+                title: '악성 심각도 예측에 중요한 특징',
+                xaxis: { title: '중요도' },
+                yaxis: { title: '특징' },
+                font: { family: 'Malgun Gothic, sans-serif' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                height: getChartHeight(true)
+            }, { responsive: true });
+
+            btn.disabled = false;
+            btn.textContent = '악성 심각도 분석 실행';
+
+        } catch (error) {
+            console.error('악성 분석 오류:', error);
+            document.getElementById('malignant-results').innerHTML = `<p>오류: ${error.message}</p>`;
+            btn.disabled = false;
+            btn.textContent = '악성 심각도 분석 실행';
+        }
+    }
+</script>
+</body>
+</html>
