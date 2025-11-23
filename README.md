@@ -92,27 +92,22 @@ used to classify tumors as **malignant (M)** or **benign (B)**.
     <tr>
       <th style="padding: 10px;">사진</th>
       <th style="padding: 10px;">이름</th>
-      <th style="padding: 10px;">역할(Role)</th>
     </tr>
     <tr>
       <td align="center"><img src="./haein.png" width="120"><br/></td>
       <td align="center"><b>서해인</b></td>
-      <td align="center">데이터 분석 · 시각화 · 대시보드 개발</td>
     </tr>
     <tr>
       <td align="center"><img src="./songhee.png" width="120"><br/></td>
       <td align="center"><b>김송희</b></td>
-      <td align="center">데이터 전처리 · 통계 분석</td>
     </tr>
     <tr>
       <td align="center"><img src="./soomin.png" width="120"><br/></td>
       <td align="center"><b>서수민</b></td>
-      <td align="center">프로젝트 문서화 · 리포트 디자인</td>
     </tr>
     <tr>
       <td align="center"><img src="./yuzi.png" width="120"><br/></td>
       <td align="center"><b>이유지</b></td>
-      <td align="center">EDA · 모델링 서포트 · 프레젠테이션</td>
     </tr>
   </table>
 </p>
