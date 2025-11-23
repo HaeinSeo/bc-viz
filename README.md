@@ -72,16 +72,50 @@ used to classify tumors as **malignant (M)** or **benign (B)**.
 | 19 | concave_points2 | Concave Points SE | 오목한 부분의 표준오차 | 표준오차(se) |
 | 20 | symmetry2 | Symmetry SE | 대칭도의 표준오차 | 표준오차(se) |
 | 21 | fractal_dimension2 | Fractal Dimension SE | 프랙탈 차원의 표준오차 | 표준오차(se) |
-| 22 | radius3 | Worst Radius | 최댓값 반경 | 최댓값(worst) |
-| 23 | texture3 | Worst Texture | 최댓값 질감 | 최댓값(worst) |
-| 24 | perimeter3 | Worst Perimeter | 최댓값 둘레 | 최댓값(worst) |
-| 25 | area3 | Worst Area | 최댓값 면적 | 최댓값(worst) |
-| 26 | smoothness3 | Worst Smoothness | 최댓값 매끄러움 | 최댓값(worst) |
-| 27 | compactness3 | Worst Compactness | 최댓값 조밀도 | 최댓값(worst) |
-| 28 | concavity3 | Worst Concavity | 최댓값 오목함 | 최댓값(worst) |
-| 29 | concave_points3 | Worst Concave Points | 최댓값 오목한 부분의 개수 | 최댓값(worst) |
-| 30 | symmetry3 | Worst Symmetry | 최댓값 대칭도 | 최댓값(worst) |
-| 31 | fractal_dimension3 | Worst Fractal Dimension | 최댓값 프랙탈 차원 | 최댓값(worst) |
+| 22 | radius3 | Worst Radius | 최악 상태 반경 | 최악 상태(worst) |
+| 23 | texture3 | Worst Texture | 최악 상태 질감 | 최악 상태(worst) |
+| 24 | perimeter3 | Worst Perimeter | 최악 상태 둘레 | 최악 상태(worst) |
+| 25 | area3 | Worst Area | 최악 상태 면적 | 최악 상태(worst) |
+| 26 | smoothness3 | Worst Smoothness | 최악 상태 매끄러움 | 최악 상태(worst) |
+| 27 | compactness3 | Worst Compactness | 최악 상태 조밀도 | 최악 상태(worst) |
+| 28 | concavity3 | Worst Concavity | 최악 상태 오목함 | 최악 상태(worst) |
+| 29 | concave_points3 | Worst Concave Points | 최악 상태 오목한 부분 개수 | 최악 상태(worst) |
+| 30 | symmetry3 | Worst Symmetry | 최악 상태 대칭도 | 최악 상태(worst) |
+| 31 | fractal_dimension3 | Worst Fractal Dimension | 최악 상태 프랙탈 차원 | 최악 상태(worst) |
+
+---
+
+### 👥 Team Members
+
+<p align="center">
+  <table style="border-collapse: collapse;">
+    <tr>
+      <th style="padding: 10px;">사진</th>
+      <th style="padding: 10px;">이름</th>
+      <th style="padding: 10px;">역할(Role)</th>
+    </tr>
+    <tr>
+      <td align="center"><img src="./haein.png" width="120"><br/></td>
+      <td align="center"><b>서해인</b></td>
+      <td align="center">데이터 분석 · 시각화 · 대시보드 개발</td>
+    </tr>
+    <tr>
+      <td align="center"><img src="./songhee.png" width="120"><br/></td>
+      <td align="center"><b>김송희</b></td>
+      <td align="center">데이터 전처리 · 통계 분석</td>
+    </tr>
+    <tr>
+      <td align="center"><img src="./soomin.png" width="120"><br/></td>
+      <td align="center"><b>서수민</b></td>
+      <td align="center">프로젝트 문서화 · 리포트 디자인</td>
+    </tr>
+    <tr>
+      <td align="center"><img src="./yuzi.png" width="120"><br/></td>
+      <td align="center"><b>이유지</b></td>
+      <td align="center">EDA · 모델링 서포트 · 프레젠테이션</td>
+    </tr>
+  </table>
+</p>
 
 ---
 
@@ -102,5 +136,3 @@ AI 기반 진단 보조 시스템의 가능성을 제시하고,
 ### 📚 Citation
 If you use this dataset, please cite the UCI ML Repository entry:  
 **Breast Cancer Wisconsin (Diagnostic) Data Set, UCI Machine Learning Repository.**
-
-
