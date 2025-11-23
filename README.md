@@ -129,7 +129,7 @@ AI 기반 진단 보조 시스템의 가능성을 제시하고,
 
 ### 🎥 Dashboard Test (New)
 
-https://github.com/user-attachments/assets/a596c009-47fc-46b4-a8ab-bed830c7054f
+https://github.com/user-attachments/assets/9f42e6b8-f3ae-4e1d-8b78-89ec98645897
 
 
 ---
