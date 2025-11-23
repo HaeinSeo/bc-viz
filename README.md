@@ -130,12 +130,14 @@ AI 기반 진단 보조 시스템의 가능성을 제시하고,
 ### 🎥 Dashboard Test
 
 <p align="center">
-  <video width="600" controls>
-    <source src="https://raw.githubusercontent.com/HaeinSeo/bc-viz/main/dashboard_test.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
+  <a href="https://raw.githubusercontent.com/HaeinSeo/bc-viz/main/dashboard_test.mp4">
+    <img src="./dashboard_thumb.png" width="450" alt="Dashboard Test Thumbnail">
+  </a>
 </p>
 
+<p align="center">
+  <sub>📌 썸네일을 클릭하면 대시보드 테스트 영상(mp4)이 재생됩니다.</sub>
+</p>
 
 ---
 
