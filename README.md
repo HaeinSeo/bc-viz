@@ -129,13 +129,7 @@ AI 기반 진단 보조 시스템의 가능성을 제시하고,
 
 ### 🎥 Dashboard Test (New)
 
-<p align="center">
-  <video width="600" controls>
-    <source src="https://github.com/HaeinSeo/bc-viz/raw/main/dashboard_test_new_1.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
-</p>
-
+https://github.com/user-attachments/assets/a596c009-47fc-46b4-a8ab-bed830c7054f
 
 
 ---
