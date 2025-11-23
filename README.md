@@ -131,7 +131,7 @@ AI 기반 진단 보조 시스템의 가능성을 제시하고,
 
 <p align="center">
   <video width="600" controls>
-    <source src="./dashboard_test.mp4" type="video/mp4">
+    <source src="https://raw.githubusercontent.com/HaeinSeo/bc-viz/main/dashboard_test.mp4" type="video/mp4">
     Your browser does not support the video tag.
   </video>
 </p>
