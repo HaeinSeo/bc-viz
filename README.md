@@ -88,29 +88,28 @@ used to classify tumors as **malignant (M)** or **benign (B)**.
 ### 👥 Team Members
 
 <p align="center">
-  <table style="border-collapse: collapse;">
+  <table>
     <tr>
-      <th style="padding: 10px;">사진</th>
-      <th style="padding: 10px;">이름</th>
-    </tr>
-    <tr>
-      <td align="center"><img src="./haein.png" width="120"><br/></td>
-      <td align="center"><b>서해인</b></td>
-    </tr>
-    <tr>
-      <td align="center"><img src="./songhee.png" width="120"><br/></td>
-      <td align="center"><b>김송희</b></td>
-    </tr>
-    <tr>
-      <td align="center"><img src="./soomin.png" width="120"><br/></td>
-      <td align="center"><b>서수민</b></td>
-    </tr>
-    <tr>
-      <td align="center"><img src="./yuzi.png" width="120"><br/></td>
-      <td align="center"><b>이유지</b></td>
+      <td align="center">
+        <img src="./haein.png" width="120"><br/>
+        <b>서해인</b>
+      </td>
+      <td align="center">
+        <img src="./songhee.png" width="120"><br/>
+        <b>김송희</b>
+      </td>
+      <td align="center">
+        <img src="./soomin.png" width="120"><br/>
+        <b>서수민</b>
+      </td>
+      <td align="center">
+        <img src="./yuzi.png" width="120"><br/>
+        <b>이유지</b>
+      </td>
     </tr>
   </table>
 </p>
+
 
 ---
 
