@@ -103,14 +103,37 @@ def encode_logo():
         pass
     return None
 
+# 팀원 이미지를 base64로 인코딩
+def encode_team_images():
+    """팀원 캐릭터 이미지들을 base64로 인코딩"""
+    team_images = {}
+    team_members = ['yuzi', 'soomin', 'songhee', 'haein']
+    
+    for member in team_members:
+        img_path = os.path.join("team_character", f"{member}.png")
+        try:
+            if os.path.exists(img_path):
+                with open(img_path, "rb") as img_file:
+                    team_images[member] = base64.b64encode(img_file.read()).decode('utf-8')
+        except Exception as e:
+            print(f"팀원 이미지 로드 오류 ({member}): {e}")
+    
+    return team_images
+
 @app.route('/')
 def index():
     """메인 페이지"""
     # 데이터 로드
     load_data()
     logo_base64 = encode_logo()
+    team_images = encode_team_images()
     
-    return render_template('dashboard.html', logo_base64=logo_base64)
+    # 디버깅: 이미지 로드 확인
+    print(f"로드된 팀원 이미지 수: {len(team_images)}")
+    for member, img_data in team_images.items():
+        print(f"  - {member}: {len(img_data) if img_data else 0} bytes")
+    
+    return render_template('dashboard.html', logo_base64=logo_base64, team_images=team_images)
 
 @app.route('/api/data/overview')
 def get_overview():

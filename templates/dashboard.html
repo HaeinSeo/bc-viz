@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BC-Viz: 유방암 데이터 분석 대시보드</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.ico') }}">
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         * {
@@ -369,6 +370,7 @@
             background: linear-gradient(135deg, #48BBB4 0%, #2a9d8f 50%, #c4f1ff 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .page-header p {
@@ -1212,6 +1214,112 @@
                 padding: 1.5rem 2rem;
             }
         }
+
+        /* 팀 소개 스타일 */
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .team-member-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            border: 2px solid transparent;
+        }
+
+        .team-member-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #48BBB4 0%, #2a9d8f 50%, #667eea 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .team-member-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 32px rgba(72, 187, 180, 0.2), 0 4px 16px rgba(0, 0, 0, 0.1);
+            border-color: rgba(72, 187, 180, 0.3);
+        }
+
+        body.dark-mode .team-member-card:hover {
+            box-shadow: 0 12px 32px rgba(72, 187, 180, 0.3), 0 4px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .team-member-card:hover::before {
+            opacity: 1;
+        }
+
+        .team-member-image {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 1.5rem;
+            border: 4px solid #48BBB4;
+            box-shadow: 0 4px 16px rgba(72, 187, 180, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .team-member-card:hover .team-member-image {
+            transform: scale(1.05);
+            box-shadow: 0 6px 24px rgba(72, 187, 180, 0.4);
+        }
+
+        .team-member-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .team-member-role {
+            font-size: 1rem;
+            color: var(--accent-color);
+            font-weight: 600;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .team-member-description {
+            font-size: 0.9375rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-top: 1rem;
+        }
+
+        body.dark-mode .team-member-name {
+            color: #ffffff;
+        }
+
+        body.dark-mode .team-member-description {
+            color: #cbd5e1;
+        }
+
+        @media (max-width: 768px) {
+            .team-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .team-member-image {
+                width: 150px;
+                height: 150px;
+            }
+        }
     </style>
 </head>
 <body class="light-mode">
@@ -1256,6 +1364,9 @@
                 </li>
                 <li class="sidebar-menu-item" onclick="showPage('correlation')">
                     <span>📊</span> <span>상관관계 분석</span>
+                </li>
+                <li class="sidebar-menu-item" onclick="showPage('team')">
+                    <span>👥</span> <span>팀 소개</span>
                 </li>
                 <li class="sidebar-menu-item hidden" id="malignant-menu-item" onclick="showPage('malignant-analysis')">
                     <span>⚡</span> <span>악성 심각도 분석</span>
@@ -1451,6 +1562,27 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 팀 소개 -->
+            <div id="page-team" class="page-content hidden">
+                <div class="page-header">
+                    <h1>👥 팀 소개</h1>
+                    <p>BC-Viz 프로젝트를 함께 만든 팀원들을 소개합니다</p>
+                </div>
+
+                <div class="team-grid" id="team-members">
+                    <!-- 팀원 카드들이 여기에 동적으로 추가됩니다 -->
+                </div>
+            </div>
+
+            <!-- 팀원 이미지 데이터 (서버에서 전달) -->
+            <script type="application/json" id="team-images-data">
+            {% if team_images %}
+            {{ team_images | tojson }}
+            {% else %}
+            {}
+            {% endif %}
+            </script>
         </div>
     </div>
 
@@ -1545,9 +1677,18 @@
         return mergedLayout;
     }
 
+    // 팀원 정보
+    const teamMembers = {
+        yuzi: { name: '이유지', role: '팀원', description: '데이터 분석 및 시각화 담당, 보고서' },
+        soomin: { name: '서수민', role: '팀원', description: '데이터 분석 및 시각화, PPT, 발표' },
+        songhee: { name: '김송희', role: '팀원', description: 'XAI 분석 및 해석 담당, 보고서' },
+        haein: { name: '서해인', role: '팀원', description: '프로젝트 총괄 및 웹 대시보드 개발, PPT, 발표' }
+    };
+
     document.addEventListener('DOMContentLoaded', function() {
         initializePage();
         loadOverview();
+        loadTeamMembers();
     });
 
     function initializePage() {
@@ -2229,7 +2370,59 @@
             case 'visualization':
                 loadVisualization();
                 break;
+            case 'team':
+                loadTeamMembers();
+                break;
         }
+    }
+
+    function loadTeamMembers() {
+        const teamContainer = document.getElementById('team-members');
+        if (!teamContainer) {
+            console.error('팀원 컨테이너를 찾을 수 없습니다.');
+            return;
+        }
+
+        // 팀원 이미지 데이터 (서버에서 전달받은 base64 이미지)
+        let teamImages = {};
+        try {
+            const imagesDataElement = document.getElementById('team-images-data');
+            if (imagesDataElement) {
+                const imagesData = imagesDataElement.textContent.trim();
+                console.log('팀원 이미지 데이터 길이:', imagesData.length);
+                if (imagesData && imagesData !== '{}') {
+                    teamImages = JSON.parse(imagesData);
+                    console.log('로드된 팀원 이미지:', Object.keys(teamImages));
+                } else {
+                    console.warn('팀원 이미지 데이터가 비어있습니다.');
+                }
+            } else {
+                console.warn('팀원 이미지 데이터 요소를 찾을 수 없습니다.');
+            }
+        } catch (e) {
+            console.error('팀원 이미지 데이터 파싱 오류:', e);
+        }
+
+        let teamHTML = '';
+        
+        Object.keys(teamMembers).forEach(memberKey => {
+            const member = teamMembers[memberKey];
+            const imgBase64 = teamImages[memberKey] || '';
+            const imgSrc = imgBase64 ? `data:image/png;base64,${imgBase64}` : '';
+            
+            teamHTML += `
+                <div class="team-member-card">
+                    ${imgSrc ? `<img src="${imgSrc}" alt="${member.name}" class="team-member-image" onerror="console.error('이미지 로드 실패:', '${member.name}'); this.style.display='none'; const fallback = this.nextElementSibling; if(fallback) fallback.style.display='flex';">` : ''}
+                    <div class="team-member-image" style="background: linear-gradient(135deg, #48BBB4 0%, #2a9d8f 100%); ${imgSrc ? 'display: none;' : 'display: flex;'} align-items: center; justify-content: center; color: white; font-size: 3rem;">👤</div>
+                    <h3 class="team-member-name">${member.name}</h3>
+                    <p class="team-member-role">${member.role}</p>
+                    <p class="team-member-description">${member.description}</p>
+                </div>
+            `;
+        });
+
+        teamContainer.innerHTML = teamHTML;
+        console.log('팀원 정보 로드 완료. 팀원 수:', Object.keys(teamMembers).length);
     }
 
     async function updatePCA() {
